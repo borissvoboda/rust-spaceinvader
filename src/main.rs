@@ -28,6 +28,17 @@ fn main() -> Result <(), Box<dyn Error>> {
     stdout.execute(EnterAlternateScreen)?; // alternate screen. Using extention execute - immediately execute; 
     stdout.execute(Hide)?; // hide cursor
 
+    // Multithreading
+    // render loop in a separate thread
+    // marginal speed up
+    // channel to communicate with the thread
+    // render tx = render transciever 
+    // render rx = render receiver
+    // mpsc channels are built in the standard library
+    let (render_tx, render_rx) = mpsc::channel();
+
+
+
     // Game Loop
     'gameloop: loop {  // thats the name of the game... loop, so we can exit it from anywhere in the loop by name 
         // Input handling / pull for input event. Poll - takes duration. Default duration - zero.

@@ -19,7 +19,17 @@ pub fn new_frame() -> Frame {
     cols
 }
 
-// pub trait 
+// trait Drawable
+// in order to be drawable, you neet to implement the methor
+// draw, where you take a immutable reference to self an
+// and a mutable reference to the frame 
+// and you draw yourself into the frame
+
+
+pub trait Drawable {
+    fn draw(&self, frame: &mut Frame );
+
+} 
 
 /*
 vector of vectors of borrowed static string slices =
