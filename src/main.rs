@@ -1,9 +1,7 @@
 use std::{
-    error::Error,
-    sync::mpsc::{self, Receiver},
-    time::{Duration, Instant},
-    {io, thread},
+    error::Error, io::{self, Stdout}, sync::mpsc::{self, channel, Receiver}, thread, time::{Duration, Instant}
 };
+use invaders::frame;
 use rusty_audio::Audio;
 use crossterm::{
     cursor::{Hide, Show},
@@ -28,6 +26,8 @@ fn main() -> Result <(), Box<dyn Error>> {
     stdout.execute(EnterAlternateScreen)?; // alternate screen. Using extention execute - immediately execute; 
     stdout.execute(Hide)?; // hide cursor
 
+
+    // ------------------------------------------
     // Multithreading
     // render loop in a separate thread
     // marginal speed up
@@ -36,6 +36,32 @@ fn main() -> Result <(), Box<dyn Error>> {
     // render rx = render receiver
     // mpsc channels are built in the standard library
     let (render_tx, render_rx) = mpsc::channel();
+    // catching thread handler in this var; standard thread 
+    // it teakes closure
+    let render_handle = thread::spawn(move || {
+        let mut last_frame = frame::new_frame();
+        let mut stdout = io::stdout();
+
+        // actually rendering the entire screen once 
+        // giving it a mutable ref. to stdout, immutable ref to last_frame.
+        // since we dont have a current frame, so we give it last frame again
+        // last "true" = force rendering everything
+        render::render(&mut stdout, &last_frame, &last_frame, true);
+        // screen has beet set up once.
+        // now we can do incremental updates
+        loop {
+            // we match on the result - if it is a frame, or an error.
+            // this will return a current frame, but to do smtg with it, we make
+            // a var from it - with let 
+           let curr_frame = match render_rx.recv() {
+                Ok(x) => x,
+                Err(_) => break,
+            };
+            render::render(&mut stdout, &last_frame, &curr_frame, false);
+            last_frame = curr_frame;
+
+        }
+    });
 
 
 
