@@ -1,7 +1,15 @@
 use std::{
     error::Error, io::{self, Stdout}, sync::mpsc::{self, channel, Receiver}, thread, time::{Duration, Instant}
 };
-use invaders::frame;
+use invaders::{
+    frame::{self, new_frame, Drawable, Frame},
+    // invaders::Invaders,
+    // level::Level,
+    // menu::Menu,
+    player::Player,
+    render,
+    // score::Score,
+};
 use rusty_audio::Audio;
 use crossterm::{
     cursor::{Hide, Show},
@@ -28,8 +36,8 @@ fn main() -> Result <(), Box<dyn Error>> {
 
 
     // ------------------------------------------
+    // Render loop in a separate thread
     // Multithreading
-    // render loop in a separate thread
     // marginal speed up
     // channel to communicate with the thread
     // render tx = render transciever 
@@ -66,11 +74,20 @@ fn main() -> Result <(), Box<dyn Error>> {
 
 
     // Game Loop
+    let mut player = Player::new();
     'gameloop: loop {  // thats the name of the game... loop, so we can exit it from anywhere in the loop by name 
+        
+        // Per-frame init
+        let mut curr_frame = new_frame();
+
+
         // Input handling / pull for input event. Poll - takes duration. Default duration - zero.
+        
         while event::poll(Duration::default())? {
             if let Event::Key(key_event) = event::read()? {
                 match key_event.code {
+                    KeyCode::Left => player.move_left(),
+                    KeyCode::Right => player.move_right(),
                     KeyCode::Esc | KeyCode::Char('q') => {
                         audio.play("lose");
                         break 'gameloop;
@@ -79,10 +96,26 @@ fn main() -> Result <(), Box<dyn Error>> {
                 }
             }
         }
+
+        // ----------------------
+        // Draw & render section
+        player.draw(&mut curr_frame);
+
+        // 1. render transciever side; send current frame
+        // we dont need it, so we move it to a diff thread
+        // this returns a result; but we expect it to fail a first few times
+        // this game loop keeps going before that child thread is set up and starts receiving
+        // so we ignore the errror silently ( " let _ ")...
+        let _ = render_tx.send(curr_frame);  
+        // artificial sleep - single milisecond
+        thread::sleep(Duration::from_millis(1));
+
     }   
 
 
     // Cleanup
+    drop(render_tx);  // we need to join the thread. Newer versions of rust do not require this
+    render_handle.join().unwrap();
     audio.wait();
     stdout.execute(Show)?;
     stdout.execute(LeaveAlternateScreen)?;
