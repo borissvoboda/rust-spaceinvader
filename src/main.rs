@@ -75,9 +75,12 @@ fn main() -> Result <(), Box<dyn Error>> {
 
     // Game Loop
     let mut player = Player::new();
+    let mut instant = Instant::now();
     'gameloop: loop {  // thats the name of the game... loop, so we can exit it from anywhere in the loop by name 
         
-        // Per-frame init
+        // Per-frame initialization
+        let delta = instant.elapsed();  // since the begin. of its lifetime.
+        instant = Instant::now();                   // next time we are in the loop, we have measured the time we are in the loop
         let mut curr_frame = new_frame();
 
 
@@ -88,6 +91,11 @@ fn main() -> Result <(), Box<dyn Error>> {
                 match key_event.code {
                     KeyCode::Left => player.move_left(),
                     KeyCode::Right => player.move_right(),
+                    KeyCode::Char(' ') | KeyCode::Enter => {
+                        if player.shoot() {
+                            audio.play("pew");
+                        }
+                    }
                     KeyCode::Esc | KeyCode::Char('q') => {
                         audio.play("lose");
                         break 'gameloop;
@@ -97,8 +105,16 @@ fn main() -> Result <(), Box<dyn Error>> {
             }
         }
 
-        // ----------------------
+        // --------------------------------------------------------------
+        // UPDATES - updatig timers
+        player.update(delta);
+
+
+
+        // --------------------------------------------------------------
         // Draw & render section
+        
+        // Draw player into the frame
         player.draw(&mut curr_frame);
 
         // 1. render transciever side; send current frame

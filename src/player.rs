@@ -1,9 +1,10 @@
 use crate::{
     frame::{Drawable, Frame},
     // invaders::Invaders,
-    // shot::Shot,
+    shot::Shot,
     {NUM_COLS, NUM_ROWS},
 };
+use std::time::Duration;
 
 // Public structure named "Player", 
 
@@ -14,6 +15,7 @@ use crate::{
 pub struct Player {
     x: usize,
     y: usize,
+    shots: Vec<Shot>,
 }  
 
 // implementing (???)
@@ -23,6 +25,7 @@ impl Player {
         Self {
             x: NUM_COLS / 2,   // roughly in the middle
             y: NUM_ROWS - 1,   // y starts at 0, at the top of the screen. As y inc, we go down on the screen
+            shots: Vec::new(),
         }
     }
 
@@ -39,6 +42,22 @@ impl Player {
         }
     }
 
+    pub fn shoot(&mut self) -> bool {  // bool indic. if we successf. shot
+        if self.shots.len() < 2 {
+            self.shots.push(Shot::new(self.x, self.y -1));  //above us
+            true
+        } else {
+            false
+        }
+    } 
+
+    pub fn update(&mut self, delta: Duration) {
+        for shot in self.shots.iter_mut() {  // we go through every shot in our shots; iterate mutably
+            shot.update(delta);
+        }
+        self.shots.retain(|shot| !shot.dead());  // cleanup
+    }
+
 }
 
 // draw our player into the frame
@@ -48,6 +67,11 @@ impl Drawable for Player {
         // we have access to the mutable frame, so we use it
         // we set it to the char that repres. player
         frame[self.x][self.y] = "A";
+
+        // we draw shots here
+        for shot in self.shots.iter()  {  // we iterate immutably, bcs we do not need to change values
+            shot.draw(frame);
+        }
 
     }
 }
