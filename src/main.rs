@@ -76,6 +76,7 @@ fn main() -> Result <(), Box<dyn Error>> {
     // Game Loop
     let mut player = Player::new();
     let mut instant = Instant::now();
+    let mut invaders = Invaders::new();
     'gameloop: loop {  // thats the name of the game... loop, so we can exit it from anywhere in the loop by name 
         
         // Per-frame initialization
@@ -84,8 +85,8 @@ fn main() -> Result <(), Box<dyn Error>> {
         let mut curr_frame = new_frame();
 
 
+        // INPUT
         // Input handling / pull for input event. Poll - takes duration. Default duration - zero.
-        
         while event::poll(Duration::default())? {
             if let Event::Key(key_event) = event::read()? {
                 match key_event.code {
@@ -108,14 +109,21 @@ fn main() -> Result <(), Box<dyn Error>> {
         // --------------------------------------------------------------
         // UPDATES - updatig timers
         player.update(delta);
-
+        if invaders.update(delta) {
+            audio.play("move");
+        }
 
 
         // --------------------------------------------------------------
         // Draw & render section
         
         // Draw player into the frame
-        player.draw(&mut curr_frame);
+        // player.draw(&mut curr_frame);     // no longer needed
+        // invaders.draw(&mut curr_frame);   // no longer needed
+        let drawables: Vec<&dyn Drawable> = vec![&player, &invaders];
+        for drawable in drawables {
+            drawable.draw(&mut curr_frame);
+        }
 
         // 1. render transciever side; send current frame
         // we dont need it, so we move it to a diff thread
