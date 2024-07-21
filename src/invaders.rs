@@ -1,12 +1,17 @@
-use rusty_time::timer::Timer;
-use crate::{NUM_ROWS, NUM_COLS};
+use crate::{
+    frame::{Drawable, Frame},
+    {NUM_COLS, NUM_ROWS},
+};
+
+use rusty_time::Timer;
+use std::{cmp::max, time::Duration};
 
 pub struct Invader {
     pub x: usize,
     pub y: usize,
 }
 
-pub struct Invader {
+pub struct Invaders {
     pub army: Vec<Invader>,
     move_timer: Timer,
     direction: i32,
@@ -32,17 +37,17 @@ impl Invaders {
         }
         Self {
             army,
-            move_timer: Timer::from_millis(2000),
+            move_timer: Timer::new(Duration::from_millis(2000)),
             direction: 1,
         }
     }
 
     // update
     pub fn update(&mut self, delta: Duration) -> bool {  // wheather 
-        self.move_timer.update(delta);
-        if self.move_timer.ready {
+        self.move_timer.tick(delta);
+        if self.move_timer.finished() {
             self.move_timer.reset();
-            let mut downwarrds = false;
+            let mut downwards = false;
             if self.direction == -1 {
                 let min_x = self.army.iter().map(|invader| invader.x).min().unwrap_or(0);    
                 if min_x == 0 {
@@ -57,8 +62,8 @@ impl Invaders {
                 }
             }
             if downwards {
-                let new_duration = max(self.move_timer.duration.as_millis() - 250, 250) // everytime we move downwoards we inc their speed, if it goes below 250, return to 250
-                self.move_timer = Timer::from_millis(new_duration as u64);
+                let new_duration = max(self.move_timer.duration().as_millis() - 250, 250); // everytime we move downwoards we inc their speed, if it goes below 250, return to 250
+                self.move_timer.set_duration(Duration::from_millis(new_duration as u64));
                 for invader in self.army.iter_mut() { // loop through every invader
                     invader.y += 1;
                 }
@@ -77,13 +82,13 @@ impl Invaders {
 impl Drawable for Invaders {
     fn draw(&self, frame: &mut Frame) {
         for invader in self.army.iter() {  // draw each individ invader. Immutably, we dont need to change them
-            frame[invader.x][invader.y] = if (self.move_timer.time_left.as_secs_f32()    // we make invaders wave their arms. Half of the time we show one char, the other half - the other one.
+            frame[invader.x][invader.y] = if (self.move_timer.remaining().as_secs_f32()    // we make invaders wave their arms. Half of the time we show one char, the other half - the other one.
             / self.move_timer.duration().as_secs_f32())
             > 0.5
             {
-                'x'
+                "x"
             } else {
-                '+'
+                "+"
             }
         }
     }
