@@ -3,7 +3,7 @@ use std::{
 };
 use invaders::{
     frame::{self, new_frame, Drawable, Frame},
-    // invaders::Invaders,
+    invaders::Invaders,
     // level::Level,
     // menu::Menu,
     player::Player,
